@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>シフト写真取込</title>
+    <link rel="stylesheet" href="./styles.css?v=20260613-5" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>シフト写真取込</h1>
+        <p id="headerLead">ChatGPTの返答を貼り付けて確認します。</p>
+      </div>
+      <div id="statusBadge" class="status-badge pending" aria-live="polite">未確認</div>
+    </header>
+
+    <main class="app-shell">
+      <nav class="stepper" aria-label="進み具合">
+        <span class="step-pill active" data-step-pill="upload">1 ChatGPT</span>
+        <span class="step-pill" data-step-pill="review">2 確認</span>
+        <span class="step-pill" data-step-pill="next">3 出力</span>
+      </nav>
+
+      <section id="uploadScreen" class="screen active" aria-labelledby="uploadTitle">
+        <div class="hero-panel">
+          <h2 id="uploadTitle">ChatGPTでシフトを読み取る</h2>
+          <p>先に文章をコピーしてからChatGPTを開き、返ってきた文章をこの画面に貼り付けます。</p>
+          <p class="reassurance-note">ChatGPTは別画面で開きます。この画面は閉じずに、戻ってきてから下の枠に貼ります。</p>
+
+          <ol class="manual-step-list" aria-label="使う順番">
+            <li>
+              <span class="step-number">1</span>
+              <div class="manual-step-body">
+                <strong>送る文章をコピーします</strong>
+                <button id="copyChatGptPromptBtn" class="primary-link" type="button">ChatGPTに送る文章をコピー</button>
+              </div>
+            </li>
+            <li>
+              <span class="step-number">2</span>
+              <div class="manual-step-body">
+                <strong>ChatGPTを開きます</strong>
+                <button id="openChatGptBtn" class="secondary-action" type="button">ChatGPTを開く</button>
+              </div>
+            </li>
+            <li><span class="step-number">3</span><strong>ChatGPTで + またはクリップを押して、シフト写真を添付します</strong></li>
+            <li><span class="step-number">4</span><strong>コピーした文章を貼り付けて送ります</strong></li>
+            <li><span class="step-number">5</span><strong>返ってきた文章を全部コピーして、この画面に戻ります</strong></li>
+          </ol>
+
+          <details id="promptFallback" class="prompt-fallback">
+            <summary>コピーできない時はこちら</summary>
+            <p>下の文章を長押ししてコピーし、ChatGPTに貼り付けます。</p>
+            <textarea id="chatGptPromptFallback" readonly spellcheck="false"></textarea>
+          </details>
+
+          <label class="field manual-paste-field">
+            <span>ChatGPTから返ってきた文章を全部貼る</span>
+            <textarea id="chatGptResultInput" spellcheck="false" placeholder="ここを長押しして「貼り付け」を押してください"></textarea>
+          </label>
+          <p id="manualOcrState" class="helper-text">ChatGPTから戻ってきたら、この上の枠に貼り付けます。</p>
+        </div>
+
+        <div id="uploadIssues" class="message-list" role="alert" aria-live="polite"></div>
+
+        <button id="startReviewBtn" class="primary-action" type="button" disabled>
+          この内容で確認へ進む
+        </button>
+        <p class="safe-note">確認だけで終了できます。カレンダー追加は後で選べます。</p>
+      </section>
+
+      <section id="reviewScreen" class="screen" aria-labelledby="reviewTitle">
+        <div class="section-head">
+          <button id="backToUploadBtn" class="back-button" type="button">戻る</button>
+          <div>
+            <h2 id="reviewTitle">読み取り内容を確認</h2>
+            <p id="reviewPeriod">対象期間を確認しています</p>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric main">
+            <span>残業合計</span>
+            <strong id="totalOvertime">0時間00分</strong>
+          </div>
+          <div class="metric">
+            <span>深夜残業</span>
+            <strong id="totalNight">0時間00分</strong>
+          </div>
+          <div class="metric">
+            <span>勤務</span>
+            <strong id="workCount">0日</strong>
+          </div>
+          <div class="metric">
+            <span>休み</span>
+            <strong id="offCount">0日</strong>
+          </div>
+        </div>
+
+        <p class="notice">この画面の残業時間は、シフト内容を確認するための目安です。</p>
+
+        <div class="review-guide">
+          <strong>まず見るところ</strong>
+          <ul>
+            <li>対象期間</li>
+            <li>休みの日</li>
+            <li>極端に長い勤務</li>
+            <li>「確認」と出ている日</li>
+          </ul>
+        </div>
+
+        <div id="issues" class="message-list" role="alert" aria-live="polite"></div>
+
+        <div class="review-card">
+          <div>
+            <h3>間違っていそうな日だけ確認できます</h3>
+            <p>全部を細かく直す必要はありません。気になる日を選んでください。</p>
+          </div>
+          <button id="toggleDaysBtn" class="secondary-action" type="button">気になる日だけ確認する</button>
+        </div>
+
+        <div id="dayList" class="day-list" hidden></div>
+
+        <button id="confirmReviewBtn" class="primary-action sticky-action" type="button" disabled>
+          確認したので次へ
+        </button>
+      </section>
+
+      <section id="nextScreen" class="screen" aria-labelledby="nextTitle">
+        <div class="section-head">
+          <button id="backToReviewBtn" class="back-button" type="button">戻る</button>
+          <div>
+            <h2 id="nextTitle">次にすること</h2>
+            <p>ここで終わるか、カレンダーに入れる準備をします。</p>
+          </div>
+        </div>
+
+        <div class="finish-summary">
+          <p id="finishPeriod">対象期間</p>
+          <div>
+            <strong id="finishOvertime">残業 0時間00分</strong>
+            <span id="finishNight">深夜残業 0時間00分</span>
+          </div>
+          <p class="notice">カレンダーに入れない場合は、この確認だけで終了できます。</p>
+        </div>
+
+        <div class="choice-grid">
+          <button id="finishBtn" class="choice-card done" type="button">
+            <span>ここで終了する</span>
+            <small>カレンダーには入れず、この確認だけで終わります。</small>
+          </button>
+          <button id="calendarPrepBtn" class="choice-card" type="button">
+            <span>カレンダー用ファイルを作る</span>
+            <small>保存したファイルを開くと、カレンダーに追加できます。</small>
+          </button>
+        </div>
+
+        <div id="calendarPanel" class="calendar-panel" hidden>
+          <h3>カレンダーに入れるためのファイル</h3>
+          <p>勤務日だけを入れたファイルを保存します。保存しただけでは、まだカレンダーには入りません。保存後にファイルを開いて、追加を押します。</p>
+          <p id="sampleCalendarNotice" class="notice" hidden>練習用データではカレンダー用ファイルの保存はできません。</p>
+          <div id="calendarPreview" class="calendar-preview"></div>
+          <div class="button-pair">
+            <button id="saveCalendarBtn" class="primary-action" type="button" disabled>カレンダー用ファイルを保存</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="completeScreen" class="screen" aria-labelledby="completeTitle">
+        <div class="complete-panel">
+          <h2 id="completeTitle">作業が完了しました</h2>
+          <p id="completeMessage">確認を終了しました。</p>
+          <ol id="completeSteps" class="next-steps">
+            <li>ダウンロードしたカレンダー用ファイルを開きます。</li>
+            <li>カレンダー追加画面で内容を確認します。</li>
+            <li>問題なければ追加を押します。</li>
+          </ol>
+          <div id="completeTools" class="button-pair">
+            <button id="downloadCalendarBtn" class="secondary-action" type="button">もう一度ファイルを保存</button>
+          </div>
+          <button id="homeBtn" class="primary-action" type="button">新しいシフトを取り込む</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="editSheet" class="edit-sheet" hidden>
+      <div class="edit-card" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+        <h2 id="editTitle">この日の内容を確認</h2>
+        <p id="editDateLabel"></p>
+        <label class="field">
+          <span>シフトを選択</span>
+          <select id="editCode"></select>
+          <small id="editCodeHint" class="field-hint"></small>
+        </label>
+        <div class="time-grid">
+          <label class="field">
+            <span>開始</span>
+            <input id="editStart" type="text" readonly />
+          </label>
+          <label class="field">
+            <span>終了</span>
+            <input id="editEnd" type="text" readonly />
+          </label>
+        </div>
+        <p class="notice">勤務時間は勤務記号から自動で入ります。時間そのものが違う場合は管理者に確認してください。</p>
+        <div class="button-pair">
+          <button id="cancelEditBtn" class="secondary-action" type="button">変更せずに一覧へ戻る</button>
+          <button id="saveEditBtn" class="primary-action" type="button">この日の内容を保存して戻る</button>
+        </div>
+      </div>
+    </div>
+
+    <details class="admin-panel" hidden>
+      <summary>管理者用設定</summary>
+      <div class="prototype-tools">
+        <h3>試作確認用</h3>
+        <p>実際の運用では、写真から読み取った内容が自動で入ります。</p>
+        <button id="loadSampleBtn" class="quiet-button" type="button">練習用データを入れる</button>
+        <div class="dev-photo-panel">
+          <label class="photo-picker">
+            <input id="photoInput" type="file" accept="image/*" capture="environment" />
+            <span>写真を選ぶ</span>
+          </label>
+          <div id="photoPreview" class="photo-preview" aria-live="polite">
+            <span>まだ写真がありません</span>
+          </div>
+          <div id="photoTools" class="photo-tools" hidden>
+            <button id="rotateLeftBtn" class="secondary-action" type="button">左に回す</button>
+            <button id="rotateRightBtn" class="secondary-action" type="button">右に回す</button>
+            <button id="retryOcrBtn" class="secondary-action" type="button">もう一度読み取る</button>
+          </div>
+          <p id="photoStateText" class="helper-text">管理者用の無料OCR検証欄です。</p>
+          <button id="demoBtn" class="quiet-button" type="button">無料読み込みデモ</button>
+        </div>
+        <div class="sample-photo-tools" aria-label="OCR検証用写真">
+          <p>OCR検証用写真</p>
+          <div id="samplePhotoButtons" class="sample-photo-grid">
+            <button class="quiet-button" type="button" data-sample-label="sample_01" data-sample-url="./fixtures/ocr_samples/sample_01.jpeg">sample 01</button>
+            <button class="quiet-button" type="button" data-sample-label="sample_02" data-sample-url="./fixtures/ocr_samples/sample_02.jpeg">sample 02</button>
+            <button class="quiet-button" type="button" data-sample-label="sample_03" data-sample-url="./fixtures/ocr_samples/sample_03.jpeg">sample 03</button>
+            <button class="quiet-button" type="button" data-sample-label="sample_04" data-sample-url="./fixtures/ocr_samples/sample_04.jpeg">sample 04</button>
+            <button class="quiet-button" type="button" data-sample-label="sample_05" data-sample-url="./fixtures/ocr_samples/sample_05.jpeg">sample 05</button>
+            <button class="quiet-button" type="button" data-sample-label="sample_06" data-sample-url="./fixtures/ocr_samples/sample_06.jpeg">sample 06</button>
+          </div>
+        </div>
+        <label class="field">
+          <span>写真から読み取ったシフト</span>
+          <textarea id="shiftInput" spellcheck="false" placeholder="date,code"></textarea>
+        </label>
+      </div>
+      <div class="admin-grid">
+        <label class="field">
+          <span>無料OCRの読み取り文字</span>
+          <textarea id="ocrRawOutput" spellcheck="false" readonly></textarea>
+        </label>
+        <label class="field">
+          <span>勤務コード設定</span>
+          <textarea id="masterInput" spellcheck="false"></textarea>
+        </label>
+        <label class="field">
+          <span>表テンプレート設定</span>
+          <textarea id="templateInput" spellcheck="false"></textarea>
+        </label>
+        <div class="button-pair">
+          <button id="formatMasterBtn" class="quiet-button" type="button">整える</button>
+          <button id="resetMasterBtn" class="quiet-button" type="button">初期状態に戻す</button>
+        </div>
+      </div>
+    </details>
+
+    <script src="./app.js?v=20260613-9" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" async></script>
+  </body>
+</html>
