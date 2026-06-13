@@ -1431,6 +1431,7 @@ function buildIcs(result) {
     lines.push(`DTSTART;TZID=Asia/Tokyo:${toIcsDateTime(row.date, row.entry.start_time)}`);
     lines.push(`DTEND;TZID=Asia/Tokyo:${toIcsDateTime(row.date, row.entry.end_time)}`);
     lines.push(`DESCRIPTION:${icsEscape(buildEventDescription(row))}`);
+    lines.push("X-MICROSOFT-CDO-REMINDER:FALSE");
     lines.push("END:VEVENT");
   });
   lines.push("END:VCALENDAR");
