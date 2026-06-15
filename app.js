@@ -462,6 +462,7 @@ function parseChatGptResult(text) {
     const parsed = parseManualShiftLine(line, context);
     if (parsed) rows.push(parsed);
   });
+  rows.push(...parseManualShiftPairs(normalized, context));
   return {
     name: context.name,
     periodText: context.periodText,
@@ -512,6 +513,7 @@ function detectManualContext(text) {
 function parseManualShiftLine(line, context) {
   const trimmed = String(line ?? "").trim();
   if (!trimmed || trimmed.startsWith("#") || /^date\s*,?\s*code$/i.test(trimmed)) return null;
+  if (/^\s*(?:name|名前|氏名|対象者|period|期間|シフト期間)\s*[:：]/i.test(trimmed)) return null;
   const codePattern = manualCodePattern();
   const match =
     trimmed.match(new RegExp(`(20\\d{2}[\\/\\-]\\d{1,2}[\\/\\-]\\d{1,2})\\s*[,，\\t ]+\\s*${codePattern}`)) ??
@@ -520,6 +522,22 @@ function parseManualShiftLine(line, context) {
   const date = normalizeManualDate(match[1], context.periodStart);
   const code = normalizeManualCode(match[2]);
   return date && code ? { date, code } : null;
+}
+
+function parseManualShiftPairs(text, context) {
+  const rows = [];
+  const codePattern = manualCodePattern();
+  const pairPattern = new RegExp(
+    `(20\\d{2}[\\/\\-]\\d{1,2}[\\/\\-]\\d{1,2}|\\d{1,2}[\\/\\-]\\d{1,2})\\s*[,，]\\s*${codePattern}(?=\\s|$|[,，])`,
+    "gi",
+  );
+  let match;
+  while ((match = pairPattern.exec(String(text ?? ""))) !== null) {
+    const date = normalizeManualDate(match[1], context.periodStart);
+    const code = normalizeManualCode(match[2]);
+    if (date && code) rows.push({ date, code });
+  }
+  return rows;
 }
 
 function manualCodePattern() {
@@ -968,12 +986,18 @@ function parseMaster() {
 }
 
 function parseShiftText(text) {
-  return text
+  const normalized = normalizeInlineShiftCsv(text);
+  return normalized
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith("#"))
     .map((line, index) => parseShiftLine(line, index + 1))
     .filter(Boolean);
+}
+
+function normalizeInlineShiftCsv(text) {
+  const value = String(text ?? "").replace(/(^|\s)(date\s*,\s*code)\s+(?=20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，])/i, "$1$2\n");
+  return value.replace(/(20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，]\s*[A-Za-zー−‐‑‒–—×✕✗-]{1,5})(?=\s+20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，])/g, "$1\n");
 }
 
 function parseShiftLine(line, sourceLine) {
