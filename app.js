@@ -225,7 +225,18 @@ const state = {
   selectedEditDate: null,
   lastEditTrigger: null,
   completionWithCalendar: false,
+  analyticsCalculationTracked: false,
 };
+
+function trackUsage(eventName) {
+  window.shiftAnalytics?.track(eventName);
+}
+
+function trackCalculationCompleteOnce() {
+  if (!state.result?.ok || state.sampleMode || state.analyticsCalculationTracked) return;
+  trackUsage("shift_calculation_complete");
+  state.analyticsCalculationTracked = true;
+}
 
 function init() {
   if (new URLSearchParams(window.location.search).has("dev")) {
@@ -312,6 +323,7 @@ function bindEvents() {
     els.toggleDaysBtn.textContent = els.dayList.hidden ? "気になる日だけ確認する" : "日付を閉じる";
   });
   els.confirmReviewBtn.addEventListener("click", () => {
+    trackCalculationCompleteOnce();
     state.reviewConfirmed = true;
     goTo("next");
   });
@@ -323,7 +335,10 @@ function bindEvents() {
   });
   els.saveCalendarBtn.addEventListener("click", saveCalendarFileAndComplete);
   els.downloadCalendarBtn.addEventListener("click", () => {
-    if (state.result?.ok) download("shift_calendar.ics", buildIcs(state.result), "text/calendar");
+    if (state.result?.ok) {
+      download("shift_calendar.ics", buildIcs(state.result), "text/calendar");
+      trackUsage("shift_calendar_download");
+    }
   });
   els.homeBtn.addEventListener("click", resetForNewShift);
   els.cancelEditBtn.addEventListener("click", closeEditSheet);
@@ -403,6 +418,7 @@ function selectPromptFallbackText() {
 function handleManualPasteInput() {
   state.sampleMode = false;
   state.reviewConfirmed = false;
+  state.analyticsCalculationTracked = false;
   state.manualImportMessage = "";
   state.ocrStatus = els.chatGptResultInput.value.trim() ? "manualEditing" : "idle";
   renderAll();
@@ -443,6 +459,7 @@ function importChatGptResultAndReview() {
   recalc();
 
   if (state.result?.ok) {
+    trackCalculationCompleteOnce();
     goTo("review");
   } else {
     state.manualImportType = "warn";
@@ -1310,6 +1327,7 @@ function complete(withCalendar) {
 function saveCalendarFileAndComplete() {
   if (!state.result?.ok || state.sampleMode) return;
   download("shift_calendar.ics", buildIcs(state.result), "text/calendar");
+  trackUsage("shift_calendar_download");
   complete(true);
 }
 
@@ -1322,6 +1340,7 @@ function resetForNewShift() {
   state.result = null;
   state.screen = "upload";
   state.sampleMode = false;
+  state.analyticsCalculationTracked = false;
   state.photoSelected = false;
   state.selectedFile = null;
   state.demoPreview = false;

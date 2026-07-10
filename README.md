@@ -3,3 +3,13 @@
 LINEで共有するための公開用ページです。
 
 このページはブラウザ内で動作します。貼り付けたシフト内容や作成したICSファイルは、GitHubへ保存されません。
+
+## 匿名の利用回数計測
+
+無料版のGoogle Analytics 4で、公開アプリの通常利用時に次のイベントだけを計測します。
+
+- `shift_app_open`: アプリを開いた回数
+- `shift_calculation_complete`: 残業時間の計算が完了した回数
+- `shift_calendar_download`: カレンダーファイルを保存した回数
+
+氏名、シフト写真、勤務日、勤務記号、勤務時間、残業時間の数値は送信しません。広告パーソナライズ、Googleシグナル、Analytics Cookieは無効にしています。`?dev`、`?kaicho`、`?chairman` の確認画面とローカル環境は計測対象外です。
