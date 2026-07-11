@@ -8,76 +8,71 @@
     <title>シフト写真取込</title>
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260613-5" />
+    <link rel="stylesheet" href="./styles.css?v=20260711-1" />
   </head>
   <body>
     <header class="app-header">
-      <div>
-        <h1>シフト写真取込</h1>
-        <p id="headerLead">ChatGPTの返答を貼り付けて確認します。</p>
-      </div>
-      <div id="statusBadge" class="status-badge pending" aria-live="polite">未確認</div>
+      <h1>シフト写真取込</h1>
+      <div id="statusBadge" class="status-badge pending" aria-live="polite">返答待ち</div>
     </header>
 
     <main class="app-shell">
       <nav class="stepper" aria-label="進み具合">
-        <span class="step-pill active" data-step-pill="upload">1 ChatGPT</span>
-        <span class="step-pill" data-step-pill="review">2 確認</span>
-        <span class="step-pill" data-step-pill="next">3 出力</span>
+        <span class="step-pill active" data-step-pill="upload">1 読み取り</span>
+        <span class="step-pill" data-step-pill="review">2 確認・修正</span>
+        <span class="step-pill" data-step-pill="next">3 終了</span>
       </nav>
 
       <section id="uploadScreen" class="screen active" aria-labelledby="uploadTitle">
-        <div class="hero-panel">
-          <h2 id="uploadTitle">ChatGPTでシフトを読み取る</h2>
-          <p>先に文章をコピーしてからChatGPTを開き、返ってきた文章をこの画面に貼り付けます。</p>
-          <p class="reassurance-note">ChatGPTは別画面で開きます。この画面は閉じずに、戻ってきてから下の枠に貼ります。</p>
-
+        <div class="hero-panel compact-upload-panel">
+          <h2 id="uploadTitle">3ステップで残業時間を確認</h2>
           <ol class="manual-step-list" aria-label="使う順番">
-            <li>
-              <span class="step-number">1</span>
+            <li class="flow-step flow-step-copy">
+              <span class="step-number">ステップ1</span>
               <div class="manual-step-body">
-                <strong>送る文章をコピーします</strong>
-                <button id="copyChatGptPromptBtn" class="primary-link" type="button">ChatGPTに送る文章をコピー</button>
+                <strong>ChatGPT用の説明文をコピー</strong>
+                <button id="copyChatGptPromptBtn" class="primary-link" type="button">説明文をコピー</button>
+                <details id="promptFallback" class="prompt-fallback">
+                  <summary>コピーできない時はこちら</summary>
+                  <p>下の文章を長押ししてコピーし、ChatGPTに貼り付けます。</p>
+                  <textarea id="chatGptPromptFallback" readonly spellcheck="false"></textarea>
+                </details>
               </div>
             </li>
-            <li>
-              <span class="step-number">2</span>
+            <li class="flow-step flow-step-send">
+              <span class="step-number">ステップ2</span>
               <div class="manual-step-body">
-                <strong>ChatGPTを開きます</strong>
-                <button id="openChatGptBtn" class="secondary-action" type="button">ChatGPTを開く</button>
+                <strong>説明文を貼って写真を送る</strong>
+                <button id="openChatGptBtn" class="secondary-action" type="button">ChatGPTを開いて説明文と写真を送る</button>
+                <small class="return-note">戻っても、この画面は残ります</small>
               </div>
             </li>
-            <li><span class="step-number">3</span><strong>ChatGPTで + またはクリップを押して、シフト写真を添付します</strong></li>
-            <li><span class="step-number">4</span><strong>コピーした文章を貼り付けて送ります</strong></li>
-            <li><span class="step-number">5</span><strong>返ってきた文章を全部コピーして、この画面に戻ります</strong></li>
+            <li class="flow-step flow-step-paste">
+              <span class="step-number">ステップ3</span>
+              <div class="manual-step-body">
+                <strong>返答をこの画面に貼る</strong>
+                <label class="field manual-paste-field">
+                  <span class="visually-hidden">ChatGPTから返ってきた文章を全部貼る</span>
+                  <textarea id="chatGptResultInput" spellcheck="false" placeholder="ここを長押しして「貼り付け」を押してください"></textarea>
+                </label>
+                <p id="manualOcrState" class="helper-text">返答を全部貼ると確認できます。</p>
+              </div>
+            </li>
           </ol>
-
-          <details id="promptFallback" class="prompt-fallback">
-            <summary>コピーできない時はこちら</summary>
-            <p>下の文章を長押ししてコピーし、ChatGPTに貼り付けます。</p>
-            <textarea id="chatGptPromptFallback" readonly spellcheck="false"></textarea>
-          </details>
-
-          <label class="field manual-paste-field">
-            <span>ChatGPTから返ってきた文章を全部貼る</span>
-            <textarea id="chatGptResultInput" spellcheck="false" placeholder="ここを長押しして「貼り付け」を押してください"></textarea>
-          </label>
-          <p id="manualOcrState" class="helper-text">ChatGPTから戻ってきたら、この上の枠に貼り付けます。</p>
         </div>
 
         <div id="uploadIssues" class="message-list" role="alert" aria-live="polite"></div>
 
         <button id="startReviewBtn" class="primary-action" type="button" disabled>
-          この内容で確認へ進む
+          返答を貼ると確認できます
         </button>
-        <p class="safe-note">確認だけで終了できます。カレンダー追加は後で選べます。</p>
       </section>
 
       <section id="reviewScreen" class="screen" aria-labelledby="reviewTitle">
         <div class="section-head">
-          <button id="backToUploadBtn" class="back-button" type="button">戻る</button>
+          <button id="backToUploadBtn" class="back-button" type="button">貼り付けへ戻る</button>
           <div>
-            <h2 id="reviewTitle">読み取り内容を確認</h2>
+            <h2 id="reviewTitle">勤務内容を確認</h2>
             <p id="reviewPeriod">対象期間を確認しています</p>
           </div>
         </div>
@@ -101,41 +96,28 @@
           </div>
         </div>
 
-        <p class="notice">この画面の残業時間は、シフト内容を確認するための目安です。</p>
-
-        <div class="review-guide">
-          <strong>まず見るところ</strong>
-          <ul>
-            <li>対象期間</li>
-            <li>休みの日</li>
-            <li>極端に長い勤務</li>
-            <li>「確認」と出ている日</li>
-          </ul>
-        </div>
-
         <div id="issues" class="message-list" role="alert" aria-live="polite"></div>
 
         <div class="review-card">
           <div>
-            <h3>間違っていそうな日だけ確認できます</h3>
-            <p>全部を細かく直す必要はありません。気になる日を選んでください。</p>
+            <h3>間違いがあれば、日付を押して直せます</h3>
           </div>
-          <button id="toggleDaysBtn" class="secondary-action" type="button">気になる日だけ確認する</button>
+          <button id="toggleDaysBtn" class="secondary-action" type="button">30日分の勤務を確認・修正</button>
         </div>
 
         <div id="dayList" class="day-list" hidden></div>
 
         <button id="confirmReviewBtn" class="primary-action sticky-action" type="button" disabled>
-          確認したので次へ
+          確認を終えて次へ
         </button>
       </section>
 
       <section id="nextScreen" class="screen" aria-labelledby="nextTitle">
         <div class="section-head">
-          <button id="backToReviewBtn" class="back-button" type="button">戻る</button>
+          <button id="backToReviewBtn" class="back-button" type="button">勤務確認へ戻る</button>
           <div>
-            <h2 id="nextTitle">次にすること</h2>
-            <p>ここで終わるか、カレンダーに入れる準備をします。</p>
+            <h2 id="nextTitle">最後にすること</h2>
+            <p>どちらか1つを選んでください</p>
           </div>
         </div>
 
@@ -143,19 +125,18 @@
           <p id="finishPeriod">対象期間</p>
           <div>
             <strong id="finishOvertime">残業 0時間00分</strong>
-            <span id="finishNight">深夜残業 0時間00分</span>
+            <span id="finishNight" class="secondary-summary">深夜残業 0時間00分</span>
           </div>
-          <p class="notice">カレンダーに入れない場合は、この確認だけで終了できます。</p>
         </div>
 
         <div class="choice-grid">
           <button id="finishBtn" class="choice-card done" type="button">
-            <span>ここで終了する</span>
-            <small>カレンダーには入れず、この確認だけで終わります。</small>
+            <span><b class="choice-label">終了</b>確認だけで終了</span>
+            <small>シフトと残業時間の確認を終わります。</small>
           </button>
           <button id="calendarPrepBtn" class="choice-card" type="button">
-            <span>カレンダー用ファイルを作る</span>
-            <small>保存したファイルを開くと、カレンダーに追加できます。</small>
+            <span><b class="choice-label">保存</b>カレンダー用ファイルを保存</span>
+            <small>保存後にファイルを開くと、カレンダーへ追加できます。</small>
           </button>
         </div>
 
@@ -276,8 +257,8 @@
       </div>
     </details>
 
-    <script src="./analytics.js?v=20260710-2" defer></script>
-    <script src="./app.js?v=20260710-2" defer></script>
+    <script src="./analytics.js?v=20260711-1" defer></script>
+    <script src="./app.js?v=20260711-1" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" async></script>
   </body>
 </html>

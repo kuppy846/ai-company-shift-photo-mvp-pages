@@ -320,7 +320,8 @@ function bindEvents() {
   els.backToReviewBtn.addEventListener("click", () => goTo("review"));
   els.toggleDaysBtn.addEventListener("click", () => {
     els.dayList.hidden = !els.dayList.hidden;
-    els.toggleDaysBtn.textContent = els.dayList.hidden ? "気になる日だけ確認する" : "日付を閉じる";
+    document.body.classList.toggle("day-list-open", !els.dayList.hidden);
+    els.toggleDaysBtn.textContent = els.dayList.hidden ? "30日分の勤務を確認・修正" : "日付一覧を閉じる";
   });
   els.confirmReviewBtn.addEventListener("click", () => {
     trackCalculationCompleteOnce();
@@ -1124,9 +1125,11 @@ function renderAll() {
   renderReview();
   renderNext();
   renderEditOptions();
+  renderPageStatus();
 }
 
 function renderScreen() {
+  document.body.dataset.screen = state.screen;
   document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
   document.querySelector(`#${state.screen}Screen`)?.classList.add("active");
   document.querySelectorAll("[data-step-pill]").forEach((pill) => {
@@ -1139,6 +1142,9 @@ function renderUpload() {
   const hasRows = Boolean(result?.rows.length);
   const pastedText = els.chatGptResultInput?.value.trim() ?? "";
   els.startReviewBtn.disabled = !pastedText && !result?.ok;
+  els.startReviewBtn.textContent = els.startReviewBtn.disabled
+    ? "返答を貼ると確認できます"
+    : "貼り付けた内容を確認";
   if (els.detectedName) {
     els.detectedName.textContent = state.sampleMode
       ? "サンプル利用者（デモ）"
@@ -1151,16 +1157,12 @@ function renderUpload() {
     if (state.ocrStatus === "manualReady" && result?.ok) {
       els.manualOcrState.textContent = "取り込みました。内容確認へ進めます。";
     } else if (pastedText) {
-      els.manualOcrState.textContent = "貼り付けできています。下のボタンを押してください。";
+      els.manualOcrState.textContent = "貼り付けできました。";
     } else {
-      els.manualOcrState.textContent = "ChatGPTから戻ってきたら、この上の枠に貼り付けます。";
+      els.manualOcrState.textContent = "返答を全部貼ると確認できます。";
     }
   }
-  let uploadMessages = result?.issues ?? [
-    pastedText
-      ? { type: "warn", text: "貼り付けた内容で確認へ進んでください" }
-      : { type: "warn", text: "先にChatGPTで読み取った文章を貼り付けてください" },
-  ];
+  let uploadMessages = result?.issues ?? [];
   if (state.manualImportMessage) {
     uploadMessages = [{ type: state.manualImportType, text: state.manualImportMessage }];
     if (result?.issues?.length && state.manualImportType !== "ok") {
@@ -1210,8 +1212,9 @@ function renderUpload() {
   if (state.ocrStatus === "reading") setStatus("pending", "読み取り中");
   else if (state.ocrStatus === "manualFailed") setStatus("error", "要確認");
   else if (state.ocrStatus === "ocrNeedsReview" || state.ocrStatus === "ocrFailed") setStatus("error", "要確認");
-  else if (!hasRows) setStatus("pending", "未確認");
-  else if (result.ok) setStatus("ok", "確認できます");
+  else if (pastedText) setStatus("ok", "貼り付け済み");
+  else if (!hasRows) setStatus("pending", "返答待ち");
+  else if (result.ok) setStatus("ok", "貼り付け済み");
   else setStatus("error", "要確認");
 }
 
@@ -1222,7 +1225,7 @@ function renderReview() {
   els.totalNight.textContent = minutesToJapanese(result?.totalNight ?? 0);
   els.workCount.textContent = `${result?.workRows.length ?? 0}日`;
   els.offCount.textContent = `${result?.offRows.length ?? 0}日`;
-  renderMessages(els.issues, result?.issues ?? []);
+  renderMessages(els.issues, (result?.issues ?? []).filter((issue) => issue.type !== "ok"));
   renderDayList(result);
   els.confirmReviewBtn.disabled = !result?.ok;
 }
@@ -1255,6 +1258,20 @@ function renderNext() {
   els.finishOvertime.textContent = `残業 ${minutesToJapanese(result?.totalOvertime ?? 0)}`;
   els.finishNight.textContent = `深夜残業 ${minutesToJapanese(result?.totalNight ?? 0)}`;
   renderCalendarState();
+}
+
+function renderPageStatus() {
+  if (state.screen === "review") {
+    setStatus("warn", "内容を確認中");
+    return;
+  }
+  if (state.screen === "next") {
+    setStatus("ok", "終了方法を選択");
+    return;
+  }
+  if (state.screen === "complete") {
+    setStatus("ok", "確認完了");
+  }
 }
 
 function renderCalendarState() {
@@ -1300,6 +1317,11 @@ function renderMessages(container, messages) {
 
 function goTo(screen) {
   state.screen = screen;
+  if (screen !== "review") {
+    els.dayList.hidden = true;
+    document.body.classList.remove("day-list-open");
+    els.toggleDaysBtn.textContent = "30日分の勤務を確認・修正";
+  }
   if (screen !== "next") {
     els.calendarPanel.hidden = true;
   }
@@ -1358,7 +1380,8 @@ function resetForNewShift() {
   els.chatGptResultInput.value = "";
   els.shiftInput.value = "";
   els.dayList.hidden = true;
-  els.toggleDaysBtn.textContent = "気になる日だけ確認する";
+  document.body.classList.remove("day-list-open");
+  els.toggleDaysBtn.textContent = "30日分の勤務を確認・修正";
   if (els.photoInput) els.photoInput.value = "";
   if (els.ocrRawOutput) els.ocrRawOutput.value = "";
   renderAll();
