@@ -1,3 +1,5 @@
+import { buildIcs, calendarFilename } from "./calendar.js?v=20260713-2";
+
 const DEFAULT_MASTER = [
   ["A", "A勤務", "05:30", "14:00", 30, 0, true],
   ["AV", "AV勤務", "05:30", "14:00", 30, 0, true],
@@ -179,6 +181,8 @@ const els = {
   finishBtn: document.querySelector("#finishBtn"),
   calendarPrepBtn: document.querySelector("#calendarPrepBtn"),
   calendarPanel: document.querySelector("#calendarPanel"),
+  calendarExcludePublicOff: document.querySelector("#calendarExcludePublicOff"),
+  calendarIncludePublicOff: document.querySelector("#calendarIncludePublicOff"),
   calendarPreview: document.querySelector("#calendarPreview"),
   saveCalendarBtn: document.querySelector("#saveCalendarBtn"),
   completeMessage: document.querySelector("#completeMessage"),
@@ -225,6 +229,7 @@ const state = {
   selectedEditDate: null,
   lastEditTrigger: null,
   completionWithCalendar: false,
+  includePublicDaysOff: null,
   analyticsCalculationTracked: false,
 };
 
@@ -320,8 +325,8 @@ function bindEvents() {
   els.backToReviewBtn.addEventListener("click", () => goTo("review"));
   els.toggleDaysBtn.addEventListener("click", () => {
     els.dayList.hidden = !els.dayList.hidden;
-    document.body.classList.toggle("day-list-open", !els.dayList.hidden);
-    els.toggleDaysBtn.textContent = els.dayList.hidden ? "30日分の勤務を確認・修正" : "日付一覧を閉じる";
+    const dayCount = state.result?.rows.length ?? 0;
+    els.toggleDaysBtn.textContent = els.dayList.hidden ? `${dayCount}日分の勤務を確認・修正` : "日付を閉じる";
   });
   els.confirmReviewBtn.addEventListener("click", () => {
     trackCalculationCompleteOnce();
@@ -332,12 +337,20 @@ function bindEvents() {
   els.calendarPrepBtn.addEventListener("click", () => {
     els.calendarPanel.hidden = false;
     renderCalendarState();
-    els.saveCalendarBtn.focus();
+    els.calendarExcludePublicOff.focus();
+  });
+  els.calendarExcludePublicOff.addEventListener("change", () => {
+    state.includePublicDaysOff = false;
+    renderCalendarState();
+  });
+  els.calendarIncludePublicOff.addEventListener("change", () => {
+    state.includePublicDaysOff = true;
+    renderCalendarState();
   });
   els.saveCalendarBtn.addEventListener("click", saveCalendarFileAndComplete);
   els.downloadCalendarBtn.addEventListener("click", () => {
-    if (state.result?.ok) {
-      download("shift_calendar.ics", buildIcs(state.result), "text/calendar");
+    if (state.result?.ok && state.includePublicDaysOff !== null) {
+      download(calendarFilename(state.result), buildIcs(state.result, state.includePublicDaysOff), "text/calendar");
       trackUsage("shift_calendar_download");
     }
   });
@@ -515,15 +528,21 @@ function parseChatGptJson(text) {
 }
 
 function detectManualContext(text) {
-  const nameMatch = text.match(/^\s*#?\s*(?:name|名前|氏名|対象者)\s*[:：]\s*(.+?)\s*$/im);
-  const periodMatch =
-    text.match(/^\s*#?\s*(?:period|期間|シフト期間)\s*[:：]\s*(.+?)\s*$/im) ??
-    text.match(/(20\d{2})[\/\-年](\d{1,2})[\/\-月](19)日?\s*(?:to|〜|~|から|-)\s*(?:(20\d{2})[\/\-年])?(\d{1,2})[\/\-月](18)日?/i);
-  const startMatch = periodMatch?.[0]?.match(/20\d{2}[\/\-年]\d{1,2}[\/\-月]19/);
+  const nameMatch = text.match(
+    /(?:^|\s)#?\s*(?:name|名前|氏名|対象者)\s*[:：]\s*([^#\r\n]+?)(?=\s+#?\s*(?:period|期間|シフト期間)\s*[:：]|\s+date\s*,\s*code|\s+20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，]|$)/i,
+  );
+  const periodHeaderMatch = text.match(
+    /(?:^|\s)#?\s*(?:period|期間|シフト期間)\s*[:：]\s*((?:20\d{2})[\/\-年]\d{1,2}[\/\-月]\d{1,2}日?\s*(?:to|〜|~|から)\s*(?:20\d{2})[\/\-年]\d{1,2}[\/\-月]\d{1,2}日?)/i,
+  );
+  const periodRangeMatch = text.match(
+    /(20\d{2})[\/\-年](\d{1,2})[\/\-月](19)日?\s*(?:to|〜|~|から|-)\s*(?:(20\d{2})[\/\-年])?(\d{1,2})[\/\-月](18)日?/i,
+  );
+  const periodText = periodHeaderMatch?.[1]?.trim() ?? periodRangeMatch?.[0]?.trim() ?? "";
+  const startMatch = periodText.match(/20\d{2}[\/\-年]\d{1,2}[\/\-月]19/);
   const startDate = startMatch ? normalizeManualDate(startMatch[0]) : "";
   return {
     name: nameMatch?.[1]?.trim() ?? "",
-    periodText: periodMatch?.[1]?.trim() ?? periodMatch?.[0]?.trim() ?? "",
+    periodText,
     periodStart: startDate,
   };
 }
@@ -1125,16 +1144,22 @@ function renderAll() {
   renderReview();
   renderNext();
   renderEditOptions();
-  renderPageStatus();
+  renderHeaderStatus();
+}
+
+function renderHeaderStatus() {
+  if (state.screen === "review") setStatus("warn", "内容を確認中");
+  else if (state.screen === "next") setStatus("ok", "終了方法を選択");
+  else if (state.screen === "complete") setStatus("ok", "確認完了");
 }
 
 function renderScreen() {
-  document.body.dataset.screen = state.screen;
   document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
   document.querySelector(`#${state.screen}Screen`)?.classList.add("active");
   document.querySelectorAll("[data-step-pill]").forEach((pill) => {
     pill.classList.toggle("active", pill.dataset.stepPill === (state.screen === "complete" ? "next" : state.screen));
   });
+  document.body.dataset.screen = state.screen;
 }
 
 function renderUpload() {
@@ -1142,9 +1167,7 @@ function renderUpload() {
   const hasRows = Boolean(result?.rows.length);
   const pastedText = els.chatGptResultInput?.value.trim() ?? "";
   els.startReviewBtn.disabled = !pastedText && !result?.ok;
-  els.startReviewBtn.textContent = els.startReviewBtn.disabled
-    ? "返答を貼ると確認できます"
-    : "貼り付けた内容を確認";
+  els.startReviewBtn.textContent = pastedText || result?.ok ? "貼り付けた内容を確認" : "返答を貼ると確認できます";
   if (els.detectedName) {
     els.detectedName.textContent = state.sampleMode
       ? "サンプル利用者（デモ）"
@@ -1157,12 +1180,12 @@ function renderUpload() {
     if (state.ocrStatus === "manualReady" && result?.ok) {
       els.manualOcrState.textContent = "取り込みました。内容確認へ進めます。";
     } else if (pastedText) {
-      els.manualOcrState.textContent = "貼り付けできました。";
+      els.manualOcrState.textContent = "貼り付けできています。下のボタンを押してください。";
     } else {
-      els.manualOcrState.textContent = "返答を全部貼ると確認できます。";
+      els.manualOcrState.textContent = "ChatGPTから戻ってきたら、この上の枠に貼り付けます。";
     }
   }
-  let uploadMessages = result?.issues ?? [];
+  let uploadMessages = result?.issues?.filter((issue) => issue.type === "error") ?? [];
   if (state.manualImportMessage) {
     uploadMessages = [{ type: state.manualImportType, text: state.manualImportMessage }];
     if (result?.issues?.length && state.manualImportType !== "ok") {
@@ -1212,9 +1235,8 @@ function renderUpload() {
   if (state.ocrStatus === "reading") setStatus("pending", "読み取り中");
   else if (state.ocrStatus === "manualFailed") setStatus("error", "要確認");
   else if (state.ocrStatus === "ocrNeedsReview" || state.ocrStatus === "ocrFailed") setStatus("error", "要確認");
-  else if (pastedText) setStatus("ok", "貼り付け済み");
-  else if (!hasRows) setStatus("pending", "返答待ち");
-  else if (result.ok) setStatus("ok", "貼り付け済み");
+  else if (!hasRows) setStatus("pending", "未確認");
+  else if (result.ok) setStatus("ok", "確認できます");
   else setStatus("error", "要確認");
 }
 
@@ -1225,9 +1247,10 @@ function renderReview() {
   els.totalNight.textContent = minutesToJapanese(result?.totalNight ?? 0);
   els.workCount.textContent = `${result?.workRows.length ?? 0}日`;
   els.offCount.textContent = `${result?.offRows.length ?? 0}日`;
-  renderMessages(els.issues, (result?.issues ?? []).filter((issue) => issue.type !== "ok"));
+  renderMessages(els.issues, result?.issues?.filter((issue) => issue.type !== "ok") ?? []);
   renderDayList(result);
   els.confirmReviewBtn.disabled = !result?.ok;
+  if (els.dayList.hidden) els.toggleDaysBtn.textContent = `${result?.rows.length ?? 0}日分の勤務を確認・修正`;
 }
 
 function renderDayList(result) {
@@ -1255,32 +1278,26 @@ function renderDayList(result) {
 function renderNext() {
   const result = state.result;
   els.finishPeriod.textContent = result?.period?.label ?? "対象期間";
-  els.finishOvertime.textContent = `残業 ${minutesToJapanese(result?.totalOvertime ?? 0)}`;
+  els.finishOvertime.textContent = minutesToJapanese(result?.totalOvertime ?? 0);
   els.finishNight.textContent = `深夜残業 ${minutesToJapanese(result?.totalNight ?? 0)}`;
   renderCalendarState();
 }
 
-function renderPageStatus() {
-  if (state.screen === "review") {
-    setStatus("warn", "内容を確認中");
-    return;
-  }
-  if (state.screen === "next") {
-    setStatus("ok", "終了方法を選択");
-    return;
-  }
-  if (state.screen === "complete") {
-    setStatus("ok", "確認完了");
-  }
-}
-
 function renderCalendarState() {
   const result = state.result;
-  const canSaveCalendar = Boolean(result?.ok && state.reviewConfirmed && !state.sampleMode);
+  const optionSelected = state.includePublicDaysOff !== null;
+  const canSaveCalendar = Boolean(result?.ok && state.reviewConfirmed && !state.sampleMode && optionSelected);
   els.sampleCalendarNotice.hidden = !state.sampleMode;
   els.saveCalendarBtn.disabled = !canSaveCalendar;
+  els.saveCalendarBtn.hidden = !optionSelected || state.sampleMode;
+  els.calendarExcludePublicOff.checked = state.includePublicDaysOff === false;
+  els.calendarIncludePublicOff.checked = state.includePublicDaysOff === true;
+  els.calendarExcludePublicOff.closest("label")?.classList.toggle("selected", state.includePublicDaysOff === false);
+  els.calendarIncludePublicOff.closest("label")?.classList.toggle("selected", state.includePublicDaysOff === true);
+  const publicOffCount = result?.offRows.filter((row) => row.code === "-").length ?? 0;
+  const paidLeaveCount = result?.offRows.filter((row) => row.code === "X").length ?? 0;
   els.calendarPreview.innerHTML = result?.ok
-    ? `対象期間: <strong>${escapeHtml(result.period?.label ?? "未確認")}</strong><br>勤務日: <strong>${result.workRows.length}日</strong><br>形式: .ics`
+    ? `勤務: <strong>${result.workRows.length}日</strong>　有休: <strong>${paidLeaveCount}日</strong>　公休: <strong>${state.includePublicDaysOff === true ? `${publicOffCount}日を含む` : state.includePublicDaysOff === false ? "含めない" : "選択してください"}</strong>`
     : "先にシフト内容を確認してください。";
 }
 
@@ -1317,13 +1334,9 @@ function renderMessages(container, messages) {
 
 function goTo(screen) {
   state.screen = screen;
-  if (screen !== "review") {
-    els.dayList.hidden = true;
-    document.body.classList.remove("day-list-open");
-    els.toggleDaysBtn.textContent = "30日分の勤務を確認・修正";
-  }
   if (screen !== "next") {
     els.calendarPanel.hidden = true;
+    state.includePublicDaysOff = null;
   }
   renderAll();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1333,22 +1346,17 @@ function complete(withCalendar) {
   state.screen = "complete";
   state.completionWithCalendar = withCalendar;
   els.completeMessage.textContent = withCalendar
-    ? "カレンダー用ファイルを保存しました。保存しただけでは、まだカレンダーには入りません。ダウンロードしたファイルを開いて、追加を押してください。"
-    : "これで終了です。画面を閉じて大丈夫です。カレンダー追加はしていません。";
-  if (withCalendar) {
-    els.completeSteps.hidden = false;
-    els.completeTools.hidden = false;
-  } else {
-    els.completeSteps.hidden = true;
-    els.completeTools.hidden = true;
-  }
+    ? "カレンダー用ファイルを保存しました。このタブを閉じて大丈夫です。"
+    : "シフト内容の確認が終わりました。このタブを閉じて大丈夫です。";
+  els.completeSteps.hidden = true;
+  els.completeTools.hidden = true;
   renderAll();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function saveCalendarFileAndComplete() {
-  if (!state.result?.ok || state.sampleMode) return;
-  download("shift_calendar.ics", buildIcs(state.result), "text/calendar");
+  if (!state.result?.ok || state.sampleMode || state.includePublicDaysOff === null) return;
+  download(calendarFilename(state.result), buildIcs(state.result, state.includePublicDaysOff), "text/calendar");
   trackUsage("shift_calendar_download");
   complete(true);
 }
@@ -1377,11 +1385,12 @@ function resetForNewShift() {
   state.reviewConfirmed = false;
   state.selectedEditDate = null;
   state.completionWithCalendar = false;
+  state.includePublicDaysOff = null;
   els.chatGptResultInput.value = "";
   els.shiftInput.value = "";
   els.dayList.hidden = true;
-  document.body.classList.remove("day-list-open");
-  els.toggleDaysBtn.textContent = "30日分の勤務を確認・修正";
+  els.toggleDaysBtn.textContent = "対象期間の勤務を確認・修正";
+  els.calendarPanel.hidden = true;
   if (els.photoInput) els.photoInput.value = "";
   if (els.ocrRawOutput) els.ocrRawOutput.value = "";
   renderAll();
@@ -1480,54 +1489,6 @@ function formatAdminJson() {
   }
 }
 
-function buildIcs(result) {
-  const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-  const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//AI Company//Shift Photo MVP//JA",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-  ];
-  result.workRows.forEach((row, index) => {
-    lines.push("BEGIN:VEVENT");
-    lines.push(`UID:shift-${row.date}-${row.code}-${index}@shift-photo-mvp.local`);
-    lines.push(`DTSTAMP:${now}`);
-    lines.push(`SUMMARY:${icsEscape(`勤務 ${row.code}`)}`);
-    lines.push(`DTSTART;TZID=Asia/Tokyo:${toIcsDateTime(row.date, row.entry.start_time)}`);
-    lines.push(`DTEND;TZID=Asia/Tokyo:${toIcsDateTime(row.date, row.entry.end_time)}`);
-    lines.push(`DESCRIPTION:${icsEscape(buildEventDescription(row))}`);
-    lines.push("X-MICROSOFT-CDO-REMINDER:FALSE");
-    lines.push("END:VEVENT");
-  });
-  lines.push("END:VCALENDAR");
-  return `${lines.join("\r\n")}\r\n`;
-}
-
-function buildEventDescription(row) {
-  return [
-    `勤務記号: ${row.code}`,
-    `勤務時間: ${normalizeTimeLabel(row.entry.start_time)}-${normalizeTimeLabel(row.entry.end_time)}`,
-    `残業: ${minutesToJapanese(row.entry.overtime_minutes)}`,
-    `深夜残業: ${minutesToJapanese(row.entry.night_overtime_minutes)}`,
-  ].join("\n");
-}
-
-function toIcsDateTime(date, time) {
-  const [year, month, day] = date.split("-").map(Number);
-  const [hourRaw, minuteRaw] = time.split(":").map(Number);
-  const dateObj = new Date(year, month - 1, day, hourRaw, minuteRaw || 0, 0);
-  return [
-    dateObj.getFullYear(),
-    pad2(dateObj.getMonth() + 1),
-    pad2(dateObj.getDate()),
-    "T",
-    pad2(dateObj.getHours()),
-    pad2(dateObj.getMinutes()),
-    "00",
-  ].join("");
-}
-
 function download(filename, content, type) {
   const blob = new Blob([content], { type: `${type};charset=utf-8` });
   const url = URL.createObjectURL(blob);
@@ -1537,7 +1498,7 @@ function download(filename, content, type) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function setStatus(type, text) {
@@ -1626,14 +1587,6 @@ function isISODate(value) {
 
 function pad2(value) {
   return String(value).padStart(2, "0");
-}
-
-function icsEscape(value) {
-  return String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
 }
 
 function escapeHtml(value) {

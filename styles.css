@@ -973,32 +973,30 @@ textarea {
   }
 }
 
-/* 高齢者向け3ページUI: 既存の解析・編集・ICS機能は変えず表示だけ整理 */
+
+/* 2026-07 three-step production UI */
 :root {
-  --orange: #a64b00;
-  --orange-dark: #713900;
-  --orange-soft: #fff5e9;
+  --blue-card: #f8fbff;
+  --orange: #b85a00;
+  --orange-card: #fffaf4;
+  --green-card: #f6fcf8;
 }
 
 body {
-  min-height: 100dvh;
+  background: #eef1f3;
   font-size: 18px;
-  line-height: 1.45;
 }
 
 .app-header,
-.app-shell,
-.app-footer {
-  width: min(430px, calc(100vw - 24px));
+.app-shell {
+  width: min(430px, 100%);
+  margin-inline: auto;
+  background: #fff;
 }
 
 .app-header {
   align-items: center;
-  margin: 12px auto 0;
   padding: 12px 16px 9px;
-  border-radius: 18px 18px 0 0;
-  background: #fff;
-  box-shadow: 0 12px 28px rgba(25, 39, 58, 0.1);
 }
 
 .app-header h1 {
@@ -1006,158 +1004,119 @@ body {
 }
 
 .status-badge {
-  min-height: 36px;
-  margin: 0;
   padding: 7px 11px;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .app-shell {
-  min-height: calc(min(844px, 100dvh - 24px) - 103px);
-  margin: 0 auto;
-  padding: 0 16px 6px;
-  background: #fff;
+  min-height: calc(100dvh - 65px);
+  padding: 0 16px 18px;
 }
 
 .stepper {
   gap: 5px;
-  margin: 0 0 4px;
+  margin-bottom: 9px;
 }
 
 .step-pill {
   min-height: 44px;
-  padding: 9px 3px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: 0;
   border-bottom: 3px solid #d5dde6;
   border-radius: 0;
   background: #f6f8fa;
-  color: #455568;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 body[data-screen="upload"] .step-pill.active {
   border-bottom-color: var(--blue);
-  background: var(--blue-soft);
+  background: #eaf2ff;
   color: #124f9b;
 }
 
 body[data-screen="review"] .step-pill.active {
   border-bottom-color: var(--orange);
   background: #fff0df;
-  color: var(--orange-dark);
+  color: #7a3d00;
 }
 
 body[data-screen="next"] .step-pill.active,
 body[data-screen="complete"] .step-pill.active {
   border-bottom-color: var(--green);
-  background: var(--green-soft);
+  background: #e5f6ec;
   color: #12613c;
 }
 
-.screen.active {
-  padding-bottom: 2px;
-}
-
-.hero-panel,
-.review-card,
-.finish-summary,
-.calendar-panel,
-.complete-panel {
-  box-shadow: none;
-}
-
-.compact-upload-panel {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.compact-upload-panel h2 {
-  margin: 0 0 4px;
-  font-size: 20px;
-}
-
-.manual-step-list {
-  gap: 7px;
-  margin: 0;
-}
-
-.manual-step-list li.flow-step {
-  grid-template-columns: 78px minmax(0, 1fr);
-  gap: 8px;
-  min-height: 0;
-  padding: 9px 10px;
-  border-left-width: 5px;
-  background: #fff;
-}
-
-.manual-step-list .step-number {
-  width: auto;
-  min-width: 72px;
-  height: 30px;
-  padding: 4px 7px;
-  white-space: nowrap;
-  font-size: 15px;
-}
-
-.manual-step-body {
-  gap: 6px;
-}
-
-.manual-step-list strong {
-  font-size: 17px;
-}
-
-.manual-step-list button {
-  min-height: 50px;
-}
-
-.flow-step-copy {
-  border-left-color: var(--blue) !important;
-  background: #f8fbff !important;
-}
-
-.flow-step-send {
-  border-left-color: var(--orange) !important;
-  background: #fffaf4 !important;
-}
-
-.flow-step-send .step-number {
-  background: #ffead4;
-  color: var(--orange-dark);
-}
-
-.flow-step-send .secondary-action {
-  border: 2px solid var(--orange);
-  color: var(--orange-dark);
-}
-
-.flow-step-paste {
-  border-left-color: var(--green) !important;
-  background: #f6fcf8 !important;
-}
-
-.flow-step-paste .step-number {
-  background: #dff4e8;
-  color: #12613c;
-}
-
-.return-note {
-  color: #12613c;
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.flow-step-copy .prompt-fallback:not([open]) {
+body[data-screen="complete"] .stepper {
   display: none;
 }
 
-.prompt-fallback {
-  margin: 0;
+.screen-reader-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
 }
 
-.prompt-fallback[open] {
-  grid-column: 1 / -1;
+.task-card {
+  margin-top: 7px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-left-width: 5px;
+  border-radius: 10px;
+}
+
+.task-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.task-title > span {
+  flex: 0 0 auto;
+  min-width: 76px;
+  min-height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.task-title strong {
+  font-size: 17px;
+}
+
+.step-card-one { border-left-color: var(--blue); background: var(--blue-card); }
+.step-card-one .task-title > span { color: #124f9b; background: #e4efff; }
+.step-card-two { border-left-color: var(--orange); background: var(--orange-card); }
+.step-card-two .task-title > span { color: #7a3d00; background: #ffead4; }
+.step-card-three { border-left-color: var(--green); background: var(--green-card); }
+.step-card-three .task-title > span { color: #12613c; background: #dff4e8; }
+
+.task-card .primary-link,
+.task-card .secondary-action {
+  width: 100%;
+  min-height: 50px;
+}
+
+.step-card-two .secondary-action {
+  border: 2px solid var(--orange);
+  color: #713900;
+}
+
+.keep-note {
+  margin: 5px 0 0;
+  color: #12613c;
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 700;
 }
 
 .manual-paste-field {
@@ -1165,50 +1124,33 @@ body[data-screen="complete"] .step-pill.active {
 }
 
 .manual-paste-field textarea {
+  height: 145px;
   min-height: 145px;
-  resize: none;
   border: 2px solid #57936f;
+  background: #fff;
   font-family: inherit;
   font-size: 17px;
 }
 
-.helper-text {
-  margin: 0;
-  color: #455568;
+.task-card .helper-text {
+  margin-top: 5px;
   font-size: 15px;
 }
 
-.message-list:empty {
-  display: none;
-}
-
-#uploadIssues {
-  margin: 7px 0;
-}
-
-#startReviewBtn {
+#uploadScreen > .primary-action {
   min-height: 54px;
-  margin-top: 7px;
-}
-
-#startReviewBtn:disabled {
-  color: #4d5d70;
-  background: #e4e9ef;
-}
-
-.visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  overflow: hidden !important;
-  clip: rect(0 0 0 0) !important;
-  clip-path: inset(50%) !important;
-  white-space: nowrap !important;
+  margin-top: 10px;
 }
 
 .section-head {
   gap: 12px;
-  margin: 4px 0 12px;
+  margin: 6px 0 12px;
+}
+
+.section-head .back-button {
+  width: auto;
+  min-width: 112px;
+  padding-inline: 11px;
 }
 
 .section-head h2 {
@@ -1216,250 +1158,228 @@ body[data-screen="complete"] .step-pill.active {
 }
 
 .section-head p {
-  margin-top: 3px;
+  margin-top: 4px;
   font-size: 15px;
 }
 
-.back-button {
-  width: auto;
-  min-width: 116px;
-  padding: 0 10px;
-  font-size: 15px;
-}
-
-#reviewScreen .metrics {
+.metrics {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
   overflow: hidden;
-  margin-bottom: 12px;
-  border: 1px solid #e1c49f;
+  margin: 0 0 12px;
+  border: 1px solid var(--orange);
   border-radius: 12px;
   background: #fff;
 }
 
-#reviewScreen .metric {
+.metric {
   min-height: 72px;
   padding: 10px;
   border: 0;
   border-radius: 0;
 }
 
-#reviewScreen .metric.main {
+.metric.main {
   grid-column: 1 / -1;
   min-height: 102px;
-  border-bottom: 1px solid #e1c49f;
-  background: var(--orange-soft);
+  border-bottom: 1px solid var(--orange);
+  background: var(--orange-card);
 }
 
-#reviewScreen .metric:nth-child(n + 2) {
+.metric:nth-child(n + 2) {
   border-right: 1px solid #e5e9ee;
 }
 
-#reviewScreen .metric:last-child {
+.metric:last-child {
   border-right: 0;
 }
 
-#reviewScreen .metric span {
-  font-size: 16px;
-}
+.metric span { font-size: 16px; }
+.metric strong { font-size: 20px; }
+.metric.main strong { font-size: 36px; }
 
-#reviewScreen .metric strong {
-  font-size: 18px;
-}
-
-#reviewScreen .metric.main strong {
-  font-size: 36px;
-}
-
-#reviewScreen .message.ok {
-  display: none;
-}
-
-#reviewScreen .review-card {
+.review-card {
   gap: 8px;
-  margin: 10px 0;
+  margin: 12px 0;
   padding: 12px;
-  border-color: #e1c49f;
-  background: #fffaf4;
-}
-
-#reviewScreen .review-card h3 {
-  font-size: 16px;
-}
-
-#toggleDaysBtn {
-  min-height: 54px;
-  border: 2px solid var(--orange);
-  color: var(--orange-dark);
-  background: #fff;
-}
-
-#confirmReviewBtn {
-  min-height: 54px;
-  margin-top: 10px;
-  background: var(--orange);
+  border: 1px solid var(--orange);
+  background: var(--orange-card);
   box-shadow: none;
 }
 
-.day-list:not([hidden]) {
-  max-height: 58dvh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 3px;
-}
-
-body.day-list-open #reviewScreen .metrics,
-body.day-list-open #reviewScreen #issues {
-  display: none;
-}
-
-body.day-list-open #reviewScreen .review-card {
-  margin: 6px 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-body.day-list-open #reviewScreen .review-card h3,
-body.day-list-open .app-footer {
-  display: none;
-}
-
-body.day-list-open #reviewScreen .day-list:not([hidden]) {
-  max-height: calc(100dvh - 340px);
-  min-height: 260px;
-}
-
-.day-status {
-  font-size: 15px;
-}
-
-#nextScreen .finish-summary {
-  margin: 0 0 10px;
-  padding: 14px 16px;
-  border-color: #a9cfb9;
-  background: #f6fcf8;
-}
-
-#nextScreen .finish-summary strong {
-  font-size: 25px;
-}
-
-.secondary-summary {
-  display: none !important;
-}
-
-#nextScreen .choice-grid {
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-#nextScreen .choice-card {
-  min-height: 108px;
-  padding: 14px 16px;
-  border-width: 2px;
-}
-
-#nextScreen .choice-card.done {
-  border-color: #4f9b6d;
-  background: #f2fbf6;
-}
-
-#nextScreen .choice-card:not(.done) {
-  border-color: #6d9bd7;
-  background: #f3f7fd;
-}
-
-#nextScreen .choice-card span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-#nextScreen .choice-card small {
+.review-card p {
+  margin: 0;
+  color: #33465c;
   font-size: 16px;
 }
 
-.choice-label {
-  display: inline-grid;
-  place-items: center;
-  min-width: 46px;
-  min-height: 30px;
-  padding: 4px 7px;
-  border-radius: 999px;
-  background: #e4efff;
-  color: #124f9b;
-  font-size: 14px;
+.review-card .secondary-action {
+  min-height: 54px;
+  border: 2px solid var(--orange);
+  color: #713900;
 }
 
-.choice-card.done .choice-label {
-  background: #dff4e8;
-  color: #12613c;
+#confirmReviewBtn {
+  border-color: #a64b00;
+  background: #a64b00;
 }
 
-#calendarPanel {
-  margin-top: 8px;
-  padding: 14px;
+.finish-summary {
+  min-height: 102px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--orange);
+  border-radius: 12px;
+  background: var(--orange-card);
+  box-shadow: none;
 }
 
-.app-footer {
-  min-height: 38px;
-  margin: 0 auto 12px;
-  padding: 4px 16px 2px;
-  border-radius: 0 0 18px 18px;
+.finish-summary span {
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.finish-summary strong {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.2;
+}
+
+.output-choice-prompt {
+  margin: 13px 0 0;
+  color: #33465c;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.choice-grid {
+  grid-template-columns: 1fr !important;
+  gap: 10px;
+}
+
+.choice-card {
+  min-height: 108px;
+  padding: 14px 16px;
+  border: 2px solid var(--blue);
+  background: var(--blue-card);
+}
+
+.choice-card.done {
+  border-color: var(--green);
+  background: var(--green-card);
+}
+
+.choice-card span { font-size: 18px; }
+.choice-card small { font-size: 16px; line-height: 1.5; }
+
+.calendar-panel {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.calendar-options {
+  margin: 0;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--blue);
+  border-radius: 10px;
+  background: var(--blue-card);
+}
+
+.calendar-options legend {
+  padding: 0 5px;
+  color: #24364b;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.calendar-options label {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 11px;
+  border: 1px solid #aab8c6;
+  border-radius: 8px;
   background: #fff;
-  text-align: center;
-  font-size: 14px;
-  box-shadow: 0 12px 28px rgba(25, 39, 58, 0.1);
+  cursor: pointer;
 }
 
-.app-footer a,
-.privacy-page a:not(.secondary-action) {
-  color: var(--blue);
+.calendar-options label.selected {
+  border: 2px solid var(--blue);
+  background: #edf4ff;
 }
+
+.calendar-options input {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--blue);
+}
+
+.calendar-options label > span {
+  display: grid;
+  gap: 3px;
+}
+
+.calendar-options strong { font-size: 17px; }
+.calendar-options small { color: var(--muted); font-size: 14px; font-weight: 700; }
+
+.calendar-preview {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+#saveCalendarBtn {
+  margin-top: 10px;
+}
+
+.complete-panel {
+  min-height: 540px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px;
+  text-align: center;
+  border: 0;
+  box-shadow: none;
+}
+
+.complete-mark {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+  box-shadow: 0 0 0 8px rgba(23, 118, 74, 0.06);
+  font-size: 40px;
+}
+
+.complete-kicker {
+  margin: 4px 0 0;
+  color: var(--green);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.complete-panel h2 { font-size: 25px; }
+.complete-panel > p:not(.complete-kicker) { margin: 0 0 8px; color: var(--muted); }
+.complete-panel #homeBtn { width: 100%; min-height: 56px; }
 
 @media (max-width: 430px) {
+  body { background: #fff; }
   .app-header,
-  .app-shell,
-  .app-footer {
-    width: 100vw;
-  }
-
-  .app-header {
-    margin-top: 0;
-    border-radius: 0;
-  }
-
-  .app-shell {
-    min-height: calc(100dvh - 95px);
-  }
-
-  .app-footer {
-    margin-bottom: 0;
-    border-radius: 0;
-  }
-}
-
-@media (max-width: 360px) {
-  .manual-step-list li.flow-step {
-    grid-template-columns: 1fr;
-  }
-
-  .manual-step-list .step-number {
-    justify-self: start;
-  }
-
-  #reviewScreen .metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  #reviewScreen .metric.main {
-    grid-column: 1 / -1;
-  }
-
-  #reviewScreen .metric strong {
-    font-size: 18px;
-  }
+  .app-shell { width: 100%; }
 }

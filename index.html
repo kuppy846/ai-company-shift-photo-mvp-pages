@@ -8,12 +8,13 @@
     <title>シフト写真取込</title>
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260711-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260713-2" />
   </head>
   <body>
     <header class="app-header">
       <h1>シフト写真取込</h1>
-      <div id="statusBadge" class="status-badge pending" aria-live="polite">返答待ち</div>
+      <p id="headerLead" hidden></p>
+      <div id="statusBadge" class="status-badge pending" aria-live="polite">未確認</div>
     </header>
 
     <main class="app-shell">
@@ -24,41 +25,31 @@
       </nav>
 
       <section id="uploadScreen" class="screen active" aria-labelledby="uploadTitle">
-        <div class="hero-panel compact-upload-panel">
-          <h2 id="uploadTitle">3ステップで残業時間を確認</h2>
-          <ol class="manual-step-list" aria-label="使う順番">
-            <li class="flow-step flow-step-copy">
-              <span class="step-number">ステップ1</span>
-              <div class="manual-step-body">
-                <strong>ChatGPT用の説明文をコピー</strong>
-                <button id="copyChatGptPromptBtn" class="primary-link" type="button">説明文をコピー</button>
-                <details id="promptFallback" class="prompt-fallback">
-                  <summary>コピーできない時はこちら</summary>
-                  <p>下の文章を長押ししてコピーし、ChatGPTに貼り付けます。</p>
-                  <textarea id="chatGptPromptFallback" readonly spellcheck="false"></textarea>
-                </details>
-              </div>
-            </li>
-            <li class="flow-step flow-step-send">
-              <span class="step-number">ステップ2</span>
-              <div class="manual-step-body">
-                <strong>説明文を貼って写真を送る</strong>
-                <button id="openChatGptBtn" class="secondary-action" type="button">ChatGPTを開いて説明文と写真を送る</button>
-                <small class="return-note">戻っても、この画面は残ります</small>
-              </div>
-            </li>
-            <li class="flow-step flow-step-paste">
-              <span class="step-number">ステップ3</span>
-              <div class="manual-step-body">
-                <strong>返答をこの画面に貼る</strong>
-                <label class="field manual-paste-field">
-                  <span class="visually-hidden">ChatGPTから返ってきた文章を全部貼る</span>
-                  <textarea id="chatGptResultInput" spellcheck="false" placeholder="ここを長押しして「貼り付け」を押してください"></textarea>
-                </label>
-                <p id="manualOcrState" class="helper-text">返答を全部貼ると確認できます。</p>
-              </div>
-            </li>
-          </ol>
+        <h2 id="uploadTitle" class="screen-reader-only">3ステップで残業時間を確認</h2>
+
+        <div class="task-card step-card-one">
+          <div class="task-title"><span>ステップ1</span><strong>ChatGPT用の説明文をコピー</strong></div>
+          <button id="copyChatGptPromptBtn" class="primary-link" type="button">説明文をコピー</button>
+          <details id="promptFallback" class="prompt-fallback">
+            <summary>コピーできない時はこちら</summary>
+            <p>下の文章を長押ししてコピーし、ChatGPTに貼り付けます。</p>
+            <textarea id="chatGptPromptFallback" readonly spellcheck="false"></textarea>
+          </details>
+        </div>
+
+        <div class="task-card step-card-two">
+          <div class="task-title"><span>ステップ2</span><strong>説明文を貼って写真を送る</strong></div>
+          <button id="openChatGptBtn" class="secondary-action" type="button">ChatGPTを開いて説明文と写真を送る</button>
+          <p class="keep-note">ChatGPTから戻っても、この画面は残ります</p>
+        </div>
+
+        <div class="task-card step-card-three">
+          <div class="task-title"><span>ステップ3</span><strong>返答をこの画面に貼る</strong></div>
+          <label class="field manual-paste-field">
+            <span class="screen-reader-only">ChatGPTから返ってきた文章</span>
+            <textarea id="chatGptResultInput" spellcheck="false" placeholder="ここに貼り付けてください"></textarea>
+          </label>
+          <p id="manualOcrState" class="helper-text">ChatGPTから戻ってきたら、この枠に貼り付けます。</p>
         </div>
 
         <div id="uploadIssues" class="message-list" role="alert" aria-live="polite"></div>
@@ -100,9 +91,9 @@
 
         <div class="review-card">
           <div>
-            <h3>間違いがあれば、日付を押して直せます</h3>
+            <p>間違いがあれば、日付を押して直せます</p>
           </div>
-          <button id="toggleDaysBtn" class="secondary-action" type="button">30日分の勤務を確認・修正</button>
+          <button id="toggleDaysBtn" class="secondary-action" type="button">対象期間の勤務を確認・修正</button>
         </div>
 
         <div id="dayList" class="day-list" hidden></div>
@@ -117,53 +108,57 @@
           <button id="backToReviewBtn" class="back-button" type="button">勤務確認へ戻る</button>
           <div>
             <h2 id="nextTitle">最後にすること</h2>
-            <p>どちらか1つを選んでください</p>
+            <p id="finishPeriod">対象期間</p>
           </div>
         </div>
 
         <div class="finish-summary">
-          <p id="finishPeriod">対象期間</p>
-          <div>
-            <strong id="finishOvertime">残業 0時間00分</strong>
-            <span id="finishNight" class="secondary-summary">深夜残業 0時間00分</span>
-          </div>
+          <span>残業合計</span>
+          <strong id="finishOvertime">0時間00分</strong>
+          <span id="finishNight" hidden></span>
         </div>
+
+        <p class="output-choice-prompt">どちらか1つを選んでください</p>
 
         <div class="choice-grid">
+          <button id="calendarPrepBtn" class="choice-card" type="button">
+            <span>カレンダー用ファイルを保存</span>
+            <small>保存したファイルを開くと、カレンダーに追加できます。</small>
+          </button>
+
+          <div id="calendarPanel" class="calendar-panel" hidden>
+            <fieldset class="calendar-options">
+              <legend>公休をカレンダーに含めますか？</legend>
+              <label>
+                <input id="calendarExcludePublicOff" type="radio" name="include-public-days-off" value="exclude" />
+                <span><strong>公休を含めない</strong><small>公休を登録済みの方はこちら</small></span>
+              </label>
+              <label>
+                <input id="calendarIncludePublicOff" type="radio" name="include-public-days-off" value="include" />
+                <span><strong>公休を含める</strong><small>勤務・有休・公休をすべて保存</small></span>
+              </label>
+            </fieldset>
+            <p id="sampleCalendarNotice" class="notice" hidden>練習用データではカレンダー用ファイルの保存はできません。</p>
+            <div id="calendarPreview" class="calendar-preview"></div>
+            <button id="saveCalendarBtn" class="primary-action" type="button" hidden>カレンダー用ファイルを保存</button>
+          </div>
+
           <button id="finishBtn" class="choice-card done" type="button">
-            <span><b class="choice-label">終了</b>確認だけで終了</span>
+            <span>確認だけで終了</span>
             <small>シフトと残業時間の確認を終わります。</small>
           </button>
-          <button id="calendarPrepBtn" class="choice-card" type="button">
-            <span><b class="choice-label">保存</b>カレンダー用ファイルを保存</span>
-            <small>保存後にファイルを開くと、カレンダーへ追加できます。</small>
-          </button>
-        </div>
-
-        <div id="calendarPanel" class="calendar-panel" hidden>
-          <h3>カレンダーに入れるためのファイル</h3>
-          <p>勤務日だけを入れたファイルを保存します。保存しただけでは、まだカレンダーには入りません。保存後にファイルを開いて、追加を押します。</p>
-          <p id="sampleCalendarNotice" class="notice" hidden>練習用データではカレンダー用ファイルの保存はできません。</p>
-          <div id="calendarPreview" class="calendar-preview"></div>
-          <div class="button-pair">
-            <button id="saveCalendarBtn" class="primary-action" type="button" disabled>カレンダー用ファイルを保存</button>
-          </div>
         </div>
       </section>
 
       <section id="completeScreen" class="screen" aria-labelledby="completeTitle">
         <div class="complete-panel">
+          <div class="complete-mark" aria-hidden="true">✓</div>
+          <p class="complete-kicker">おつかれさまでした</p>
           <h2 id="completeTitle">作業が完了しました</h2>
           <p id="completeMessage">確認を終了しました。</p>
-          <ol id="completeSteps" class="next-steps">
-            <li>ダウンロードしたカレンダー用ファイルを開きます。</li>
-            <li>カレンダー追加画面で内容を確認します。</li>
-            <li>問題なければ追加を押します。</li>
-          </ol>
-          <div id="completeTools" class="button-pair">
-            <button id="downloadCalendarBtn" class="secondary-action" type="button">もう一度ファイルを保存</button>
-          </div>
-          <button id="homeBtn" class="primary-action" type="button">新しいシフトを取り込む</button>
+          <ol id="completeSteps" hidden></ol>
+          <div id="completeTools" hidden><button id="downloadCalendarBtn" type="button">もう一度ファイルを保存</button></div>
+          <button id="homeBtn" class="secondary-action" type="button">新しいシフトを取り込む</button>
         </div>
       </section>
     </main>
@@ -258,7 +253,7 @@
     </details>
 
     <script src="./analytics.js?v=20260711-1" defer></script>
-    <script src="./app.js?v=20260711-1" defer></script>
+    <script type="module" src="./app.js?v=20260713-3"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" async></script>
   </body>
 </html>
