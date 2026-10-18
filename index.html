@@ -8,7 +8,7 @@
     <title>シフト写真取込</title>
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
-    <link rel="stylesheet" href="./styles.css?v=20261018-1" />
+    <link rel="stylesheet" href="./styles.css?v=20261018-2" />
   </head>
   <body>
     <header class="app-header">
@@ -158,8 +158,10 @@
           <div id="completeTools" hidden><button id="downloadCalendarBtn" type="button">もう一度ファイルを保存</button></div>
           <div class="complete-actions">
             <button id="homeBtn" class="secondary-action" type="button">新しいシフトを取り込む</button>
-            <button id="closeScreenBtn" class="primary-action close-screen-button" type="button">この画面を閉じて終了する</button>
-            <p id="closeScreenFallback" class="close-screen-fallback" role="alert" hidden>この画面を自動で閉じられませんでした。画面の左上にある「×」または「戻る」を押してください。</p>
+            <div class="close-screen-guide" role="note">
+              <strong>これで終了です</strong>
+              <span>ブラウザの「×」または「戻る」で、この画面を閉じてください。</span>
+            </div>
           </div>
         </div>
       </section>
@@ -255,7 +257,7 @@
     </details>
 
     <script src="./analytics.js?v=20260711-1" defer></script>
-    <script type="module" src="./app.js?v=20261018-1"></script>
+    <script type="module" src="./app.js?v=20261018-2"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" async></script>
   </body>
 </html>

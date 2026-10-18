@@ -192,8 +192,6 @@ const els = {
   sampleCalendarNotice: document.querySelector("#sampleCalendarNotice"),
   downloadCalendarBtn: document.querySelector("#downloadCalendarBtn"),
   homeBtn: document.querySelector("#homeBtn"),
-  closeScreenBtn: document.querySelector("#closeScreenBtn"),
-  closeScreenFallback: document.querySelector("#closeScreenFallback"),
   editSheet: document.querySelector("#editSheet"),
   editTitle: document.querySelector("#editTitle"),
   editDateLabel: document.querySelector("#editDateLabel"),
@@ -357,7 +355,6 @@ function bindEvents() {
     }
   });
   els.homeBtn.addEventListener("click", resetForNewShift);
-  els.closeScreenBtn?.addEventListener("click", closeScreen);
   els.cancelEditBtn.addEventListener("click", closeEditSheet);
   els.saveEditBtn.addEventListener("click", saveEditedDay);
   els.editCode.addEventListener("change", updateEditTimes);
@@ -1383,17 +1380,8 @@ function complete(withCalendar) {
     : "シフト内容の確認が終わりました。このタブを閉じて大丈夫です。";
   els.completeSteps.hidden = true;
   els.completeTools.hidden = true;
-  if (els.closeScreenFallback) els.closeScreenFallback.hidden = true;
   renderAll();
   window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function closeScreen() {
-  if (els.closeScreenFallback) els.closeScreenFallback.hidden = true;
-  window.close();
-  window.setTimeout(() => {
-    if (!document.hidden && els.closeScreenFallback) els.closeScreenFallback.hidden = false;
-  }, 350);
 }
 
 function saveCalendarFileAndComplete() {
@@ -1433,7 +1421,6 @@ function resetForNewShift() {
   els.dayList.hidden = true;
   els.toggleDaysBtn.textContent = "対象期間の勤務を確認・修正";
   els.calendarPanel.hidden = true;
-  if (els.closeScreenFallback) els.closeScreenFallback.hidden = true;
   if (els.photoInput) els.photoInput.value = "";
   if (els.ocrRawOutput) els.ocrRawOutput.value = "";
   renderAll();
