@@ -8,7 +8,7 @@
     <title>シフト写真取込</title>
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260713-2" />
+    <link rel="stylesheet" href="./styles.css?v=20261018-1" />
   </head>
   <body>
     <header class="app-header">
@@ -18,10 +18,10 @@
     </header>
 
     <main class="app-shell">
-      <nav class="stepper" aria-label="進み具合">
-        <span class="step-pill active" data-step-pill="upload">1 読み取り</span>
-        <span class="step-pill" data-step-pill="review">2 確認・修正</span>
-        <span class="step-pill" data-step-pill="next">3 終了</span>
+      <nav id="stepper" class="stepper" aria-label="進み具合">
+        <button class="step-pill active" type="button" data-step-pill="upload" data-step-target="upload" aria-current="step">1 読み取り</button>
+        <button class="step-pill" type="button" data-step-pill="review" data-step-target="review" disabled>2 確認・修正</button>
+        <button class="step-pill" type="button" data-step-pill="next" data-step-target="next" disabled>3 終了</button>
       </nav>
 
       <section id="uploadScreen" class="screen active" aria-labelledby="uploadTitle">
@@ -61,7 +61,6 @@
 
       <section id="reviewScreen" class="screen" aria-labelledby="reviewTitle">
         <div class="section-head">
-          <button id="backToUploadBtn" class="back-button" type="button">貼り付けへ戻る</button>
           <div>
             <h2 id="reviewTitle">勤務内容を確認</h2>
             <p id="reviewPeriod">対象期間を確認しています</p>
@@ -105,7 +104,6 @@
 
       <section id="nextScreen" class="screen" aria-labelledby="nextTitle">
         <div class="section-head">
-          <button id="backToReviewBtn" class="back-button" type="button">勤務確認へ戻る</button>
           <div>
             <h2 id="nextTitle">最後にすること</h2>
             <p id="finishPeriod">対象期間</p>
@@ -158,7 +156,11 @@
           <p id="completeMessage">確認を終了しました。</p>
           <ol id="completeSteps" hidden></ol>
           <div id="completeTools" hidden><button id="downloadCalendarBtn" type="button">もう一度ファイルを保存</button></div>
-          <button id="homeBtn" class="secondary-action" type="button">新しいシフトを取り込む</button>
+          <div class="complete-actions">
+            <button id="homeBtn" class="secondary-action" type="button">新しいシフトを取り込む</button>
+            <button id="closeScreenBtn" class="primary-action close-screen-button" type="button">この画面を閉じて終了する</button>
+            <p id="closeScreenFallback" class="close-screen-fallback" role="alert" hidden>この画面を自動で閉じられませんでした。画面の左上にある「×」または「戻る」を押してください。</p>
+          </div>
         </div>
       </section>
     </main>
@@ -253,7 +255,7 @@
     </details>
 
     <script src="./analytics.js?v=20260711-1" defer></script>
-    <script type="module" src="./app.js?v=20260713-3"></script>
+    <script type="module" src="./app.js?v=20261018-1"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" async></script>
   </body>
 </html>

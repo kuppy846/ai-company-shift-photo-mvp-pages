@@ -60,6 +60,7 @@ const DEFAULT_MASTER = [
   ["N", "N勤務", "13:30", "24:00", 90, 120, true],
   ["W", "W勤務", "13:15", "24:15", 120, 135, true],
   ["Y", "Y勤務", "16:00", "24:30", 30, 150, true],
+  ["社外", "社外", "09:00", "17:00", 0, 0, true],
   ["X", "有休", "", "", 0, 0, false],
   ["-", "公休", "", "", 0, 0, false],
 ].map(([code, label, start, end, overtime, night, isWork]) => ({
@@ -133,14 +134,16 @@ YYYY-MM-DD,勤務記号
 - シフト期間は毎月19日から翌月18日です。
 - 日付は必ずYYYY-MM-DD形式にしてください。
 - 例のYYYY-MM-DDをそのまま使わず、写真に書かれている年月に合わせてください。
-- 勤務記号は写真の文字をそのまま半角英大文字で出してください。
+- 勤務記号は写真の文字をそのまま出してください。英字は半角大文字にしてください。
 - 勤務記号は次の一覧にあるものだけ使ってください: ${VALID_SHIFT_CODES}
+- 「社外」と書かれた日は「社外」のまま出してください。
 - 有休、×、✕、✗、Xに見える日は「X」で出してください。
 - 公休、休み、空欄、ー、−、-に見える日は「-」で出してください。
 - OT、TO、ZTなど、一覧にない記号に見える日は推測せず「確認」で出してください。
 - 読めない日は推測せず、codeを「確認」にしてください。`;
 
 const els = {
+  stepper: document.querySelector("#stepper"),
   headerLead: document.querySelector("#headerLead"),
   statusBadge: document.querySelector("#statusBadge"),
   openChatGptBtn: document.querySelector("#openChatGptBtn"),
@@ -164,8 +167,6 @@ const els = {
   startReviewBtn: document.querySelector("#startReviewBtn"),
   loadSampleBtn: document.querySelector("#loadSampleBtn"),
   samplePhotoButtons: document.querySelector("#samplePhotoButtons"),
-  backToUploadBtn: document.querySelector("#backToUploadBtn"),
-  backToReviewBtn: document.querySelector("#backToReviewBtn"),
   reviewPeriod: document.querySelector("#reviewPeriod"),
   totalOvertime: document.querySelector("#totalOvertime"),
   totalNight: document.querySelector("#totalNight"),
@@ -191,6 +192,8 @@ const els = {
   sampleCalendarNotice: document.querySelector("#sampleCalendarNotice"),
   downloadCalendarBtn: document.querySelector("#downloadCalendarBtn"),
   homeBtn: document.querySelector("#homeBtn"),
+  closeScreenBtn: document.querySelector("#closeScreenBtn"),
+  closeScreenFallback: document.querySelector("#closeScreenFallback"),
   editSheet: document.querySelector("#editSheet"),
   editTitle: document.querySelector("#editTitle"),
   editDateLabel: document.querySelector("#editDateLabel"),
@@ -299,6 +302,7 @@ function showChairmanCompletePreview(withCalendar) {
 }
 
 function bindEvents() {
+  els.stepper?.addEventListener("click", handleStepNavigation);
   els.openChatGptBtn?.addEventListener("click", openChatGpt);
   els.copyChatGptPromptBtn?.addEventListener("click", copyChatGptPrompt);
   els.chatGptResultInput?.addEventListener("input", handleManualPasteInput);
@@ -321,8 +325,6 @@ function bindEvents() {
   });
   els.demoBtn?.addEventListener("click", startDemoOcrFlow);
   els.startReviewBtn.addEventListener("click", importChatGptResultAndReview);
-  els.backToUploadBtn.addEventListener("click", () => goTo("upload"));
-  els.backToReviewBtn.addEventListener("click", () => goTo("review"));
   els.toggleDaysBtn.addEventListener("click", () => {
     els.dayList.hidden = !els.dayList.hidden;
     const dayCount = state.result?.rows.length ?? 0;
@@ -355,6 +357,7 @@ function bindEvents() {
     }
   });
   els.homeBtn.addEventListener("click", resetForNewShift);
+  els.closeScreenBtn?.addEventListener("click", closeScreen);
   els.cancelEditBtn.addEventListener("click", closeEditSheet);
   els.saveEditBtn.addEventListener("click", saveEditedDay);
   els.editCode.addEventListener("change", updateEditTimes);
@@ -578,7 +581,7 @@ function parseManualShiftPairs(text, context) {
 }
 
 function manualCodePattern() {
-  return "([A-Za-z]{1,5}|[-ー−‐‑‒–—]|[×✕✗]|有休?|休み?|公休|確認)";
+  return "([A-Za-z]{1,5}|社外|[-ー−‐‑‒–—]|[×✕✗]|有休?|休み?|公休|確認)";
 }
 
 function normalizeManualDate(value, periodStart = "") {
@@ -976,6 +979,7 @@ function dateFromPeriodDay(period, day) {
 
 function normalizeOcrCode(value) {
   const raw = String(value ?? "").trim();
+  if (raw === "社外") return "社外";
   if (/^(x|×|✕|✗|有|有休)$/i.test(raw)) return "X";
   if (/^(休|休み|公休|‐|‑|‒|–|—|ー|−|-)$/i.test(raw)) return "-";
   return raw
@@ -1034,7 +1038,7 @@ function parseShiftText(text) {
 
 function normalizeInlineShiftCsv(text) {
   const value = String(text ?? "").replace(/(^|\s)(date\s*,\s*code)\s+(?=20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，])/i, "$1$2\n");
-  return value.replace(/(20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，]\s*[A-Za-zー−‐‑‒–—×✕✗-]{1,5})(?=\s+20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，])/g, "$1\n");
+  return value.replace(/(20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，]\s*(?:[A-Za-zー−‐‑‒–—×✕✗-]{1,5}|社外))(?=\s+20\d{2}[\/\-]\d{1,2}[\/\-]\d{1,2}\s*[,，])/g, "$1\n");
 }
 
 function parseShiftLine(line, sourceLine) {
@@ -1157,8 +1161,16 @@ function renderScreen() {
   document.querySelectorAll(".screen").forEach((screen) => screen.classList.remove("active"));
   document.querySelector(`#${state.screen}Screen`)?.classList.add("active");
   document.querySelectorAll("[data-step-pill]").forEach((pill) => {
-    pill.classList.toggle("active", pill.dataset.stepPill === (state.screen === "complete" ? "next" : state.screen));
+    const active = pill.dataset.stepPill === (state.screen === "complete" ? "next" : state.screen);
+    pill.classList.toggle("active", active);
+    if (active) pill.setAttribute("aria-current", "step");
+    else pill.removeAttribute("aria-current");
   });
+  const pastedText = els.chatGptResultInput?.value.trim() ?? "";
+  const reviewStep = els.stepper?.querySelector('[data-step-target="review"]');
+  const nextStep = els.stepper?.querySelector('[data-step-target="next"]');
+  if (reviewStep) reviewStep.disabled = !pastedText && !state.result?.rows.length;
+  if (nextStep) nextStep.disabled = !state.result?.ok;
   document.body.dataset.screen = state.screen;
 }
 
@@ -1342,6 +1354,27 @@ function goTo(screen) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function handleStepNavigation(event) {
+  const button = event.target.closest("[data-step-target]");
+  if (!button || button.disabled) return;
+  const target = button.dataset.stepTarget;
+  if (target === state.screen || (state.screen === "complete" && target === "next")) return;
+  if (target === "upload") {
+    goTo("upload");
+    return;
+  }
+  if (target === "review") {
+    if (state.result?.rows.length) goTo("review");
+    else importChatGptResultAndReview();
+    return;
+  }
+  if (target === "next" && state.result?.ok) {
+    trackCalculationCompleteOnce();
+    state.reviewConfirmed = true;
+    goTo("next");
+  }
+}
+
 function complete(withCalendar) {
   state.screen = "complete";
   state.completionWithCalendar = withCalendar;
@@ -1350,8 +1383,17 @@ function complete(withCalendar) {
     : "シフト内容の確認が終わりました。このタブを閉じて大丈夫です。";
   els.completeSteps.hidden = true;
   els.completeTools.hidden = true;
+  if (els.closeScreenFallback) els.closeScreenFallback.hidden = true;
   renderAll();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeScreen() {
+  if (els.closeScreenFallback) els.closeScreenFallback.hidden = true;
+  window.close();
+  window.setTimeout(() => {
+    if (!document.hidden && els.closeScreenFallback) els.closeScreenFallback.hidden = false;
+  }, 350);
 }
 
 function saveCalendarFileAndComplete() {
@@ -1391,6 +1433,7 @@ function resetForNewShift() {
   els.dayList.hidden = true;
   els.toggleDaysBtn.textContent = "対象期間の勤務を確認・修正";
   els.calendarPanel.hidden = true;
+  if (els.closeScreenFallback) els.closeScreenFallback.hidden = true;
   if (els.photoInput) els.photoInput.value = "";
   if (els.ocrRawOutput) els.ocrRawOutput.value = "";
   renderAll();
