@@ -1167,11 +1167,14 @@ body[data-screen="complete"] .stepper {
 
 .section-head p {
   margin-top: 4px;
-  font-size: 15px;
+  font-size: clamp(17px, 5vw, 20px);
+  line-height: 1.35;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .metrics {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.8fr) minmax(0, 0.75fr);
   gap: 0;
   overflow: hidden;
   margin: 0 0 12px;
@@ -1205,6 +1208,10 @@ body[data-screen="complete"] .stepper {
 .metric span { font-size: 16px; }
 .metric strong { font-size: 20px; }
 .metric.main strong { font-size: 36px; }
+
+#totalNight {
+  white-space: nowrap;
+}
 
 .review-card {
   gap: 8px;
